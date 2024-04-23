@@ -16,16 +16,14 @@ dp = Dispatcher()
 @dp.message(Command(commands=["start"]))
 async def start(message: types.Message):
     await message.answer(
-        f"Привет, {message.from_user.full_name}! Я бот для чата. Введи /help для справки"
+        f"Привет, {message.from_user.full_name}! Это бот для чата. Введи /help для справки"
     )
 
 
 @dp.message(Command(commands=["stop"]))
 async def start(message: types.Message):
     print(message.from_user.first_name)
-    await message.answer(
-        f"Пока, {message.chat.first_name}! Если хочешь узнать больше, напиши /help."
-    )
+    await message.answer(f"Пока, {message.chat.first_name}!")
     await bot.close()
 
 
