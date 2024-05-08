@@ -1,20 +1,23 @@
 import asyncio
 import config
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.filters.command import Command
+from aiogram.filters.command import Command, CommandObject
 import logging
 import random
+import requests
 from keyboards import keyboard
 
+#################################################
 
 # Логирование
 logging.basicConfig(level=logging.INFO)
-
+#################################################
 # Объект бота и диспетчера
 bot = Bot(token=config.token)
 dp = Dispatcher()
 
 
+################### Команды ###############################
 @dp.message(Command(commands=["start"]))
 async def start(message: types.Message):
     await message.answer(
@@ -46,12 +49,51 @@ async def send_user_info(message: types.Message):
     )
 
 
+############ Погода #######################
+@dp.message(Command(commands=["weather"]))
+async def get_weather(message: types.Message):
+    msg = message.text.split(" ")
+    # msg = message.split(" ")
+    msg.remove(msg[0])
+    msg = " ".join(msg)
+
+    if not msg:
+        await message.answer("Введи название города")
+        return
+
+    city = msg
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={config.token_ow}&units=metric&lang=ru"
+    # await message.answer(f"Отладка {url}")
+    response = requests.get(url)
+    weather_data = response.json()
+
+    # if weather_data.get("cod") == "404":
+    #    await message.answer(f"Город {city} не найден.")
+    #    return
+    if weather_data["cod"] != 200:
+        await message.answer(f"Город {city} не найден")
+        return
+
+    temperature = weather_data["main"]["temp"]
+    description = weather_data["weather"][0]["description"]
+    wind = weather_data["wind"]["speed"]
+    await message.answer(
+        f"Погода в городе {city}: Температура: {temperature}°C, Ветер: {wind} м/с, {description}"
+    )
+
+
+############ Погода ####################### end
+
+
 @dp.message(Command(commands=["help"]))
 async def send_user_info(message: types.Message):
     user = message.from_user
-    await message.answer(f"Бот понимает команды: /start, /stop, /info, /help, /user.")
+    await message.answer(
+        f"Бот понимает команды: '/start', '/stop', '/info', '/help', '/user', '/weather Наименование города'."
+    )
 
 
+############### Сообщения
 @dp.message(F.text)
 async def msg(message: types.Message):
     if (
@@ -68,6 +110,7 @@ async def msg(message: types.Message):
         await message.reply("Не понимаю тебя...")
 
 
+################### Запуск
 async def main():
     await dp.start_polling(bot)
 
